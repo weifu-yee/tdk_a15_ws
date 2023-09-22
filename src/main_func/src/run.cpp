@@ -8,14 +8,15 @@ bool isNodeLast = false;
 bool onNode = false;
 int nodeToGo;
 double xNow, xLast = -1;
+bool nodeLoseConp = 0;
 
 ros::Publisher orientation_pub;
 ros::Subscriber node_sub;
 ros::Publisher cam_pub;
 ros::Subscriber number_sub;
 ros::Subscriber odom_sub;
+ros::Publisher node_detect_pub;
 ros::Publisher laji_pub;
-
 
 std_msgs::Int8 orientation;
 std_msgs::Int32 cam_mode;
@@ -56,8 +57,16 @@ int main(int argc, char **argv){
     number_sub = nh.subscribe("/numbers",1,numberCallback);
     odom_sub = nh.subscribe("/cmd_vel",1,odomCallback);     //fake odom
     // odom_sub = nh.subscribe("/realspeed",1,odomCallback);
+    node_detect_pub = nh.advertise<std_msgs::Bool>("/node_detect", 1);
     laji_pub = nh.advertise<std_msgs::Int8>("/cmd_laji", 1);
 
+    // double tolerence_, decelerationZone_;
+    // nh.getParam("/tolerence",tolerence_);
+    // nh.getParam("/decelerationZone",decelerationZone_);
+    nh.getParam("/tolerence",tolerence);
+    nh.getParam("/decelerationZone",decelerationZone);
+    // tolerence = tolerence_;
+    // decelerationZone = decelerationZone_;
     MAP::buildNode();
     MAP::initBuildEdge();
 
@@ -72,8 +81,6 @@ int main(int argc, char **argv){
 
     SCRIPT::firstLevel(nh);
     ROS_INFO("pass 1st Level!!");
-
-
 
     while(nh.ok()){
         orientation.data = -1;
@@ -92,7 +99,9 @@ void SCRIPT::firstLevel(ros::NodeHandle& nh){
         ros::spinOnce();
 
         if(onNode){
-            if(!MAP::check_onNode(nodeToGo)){
+            int odomState = MAP::check_onNode(nodeToGo);
+            nodeLoseConp = 0;
+            if(odomState == 0){
                 ROS_INFO("Node misjudgment!!");
                 onNode = false;
                 continue;
@@ -158,9 +167,18 @@ void SCRIPT::firstLevel(ros::NodeHandle& nh){
             if(MAP::disToOdom(MAP::nodeNow) > (x_diff + y_diff - decelerationZone))
                 orientation.data = -2;
         }
+        if(MAP::check_onNode(nodeToGo) == 2){
+            nodeLoseConp = 1;
+            ROS_INFO("nodeLoseConp");
+        }else   nodeLoseConp = 0;
         
 
         orientation_pub.publish(orientation);
+        if(nodeLoseConp){            
+            std_msgs::Bool ONE;
+            ONE.data = 1;
+            node_detect_pub.publish(ONE);
+        }
 
         // ROS_INFO("On %d, -> %d",nodeNow,nodeToGo);
         // ROS_INFO("go ahead: %d",orientation.data);

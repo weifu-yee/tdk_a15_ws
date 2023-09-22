@@ -18,10 +18,11 @@
 #define buildNodeFilePath "/home/ditrobotics/tdk_ws/src/main_func/params/buildNode.yaml"
 #define initBuildEdgeFilePath "/home/ditrobotics/tdk_ws/src/main_func/params/initBuildEdge.yaml"
 #define num_of_nodes 16
-#define tolerence 6.0
-#define decelerationZone 10.0
 
 using namespace std;
+
+extern double tolerence;
+extern double decelerationZone;
 
 namespace MAP{
     extern int nodeNow;
@@ -32,7 +33,7 @@ namespace MAP{
     void eraseEdge(int u, int v);
     int cmd_ori(int u, int v);
     int disToOdom(int u);
-    bool check_onNode(int u);
+    int check_onNode(int u);
 }
 
 using namespace MAP;

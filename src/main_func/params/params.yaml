@@ -1,1 +1,4 @@
 oriParam: 0
+tolerence: 13.0
+decelerationZone: 13.0
+nodeLoseConpDELAY: 5.0

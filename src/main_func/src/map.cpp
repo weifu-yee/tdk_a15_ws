@@ -2,6 +2,8 @@
 #include "cam.h"
 #include "odom.h"
 
+double tolerence = 13;
+double decelerationZone = 13;
 int MAP::nodeNow = -1;
 vector<pair<int, pair<double, double>>> MAP::node;     //<index, x, y>
 vector<set<int>> MAP::adj_list(num_of_nodes);       //adjacency_list
@@ -83,7 +85,7 @@ int MAP::disToOdom(int u){
     double y_diff = fabs(uy - ODOM::odometry.y);
     return (x_diff + y_diff);
 }
-bool MAP::check_onNode(int u){
+int MAP::check_onNode(int u){
     double ux = MAP::node[u].second.first;
     double uy = MAP::node[u].second.second;
     double vx, vy;
@@ -96,7 +98,9 @@ bool MAP::check_onNode(int u){
     }
     double x_diff = fabs(ux - vx);
     double y_diff = fabs(uy - vy);
-    if(disToOdom(MAP::nodeNow) < (x_diff + y_diff - tolerence))    return false;
+    double disNow = disToOdom(MAP::nodeNow);
+    if(disNow < (x_diff + y_diff - tolerence))    return 0;
+    if(disNow > (x_diff + y_diff + tolerence))    return 2;
     
-    return true;
+    return 1;
 }
