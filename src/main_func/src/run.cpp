@@ -24,6 +24,7 @@ std_msgs::Int8 cmd_laji;
 namespace SCRIPT{
     void firstLevel(ros::NodeHandle& nh);
     void dustBox(ros::NodeHandle& nh);
+    void testLine(ros::NodeHandle& nh);
 }
 void nodeCallback(const std_msgs::Bool::ConstPtr& is_node){
     bool isNode = is_node->data;
@@ -67,8 +68,12 @@ int main(int argc, char **argv){
     ROS_INFO("(%lf, %lf, %lf)",odometry.x, odometry.y, odometry.theta);
     ROS_INFO("go ahead: %d",orientation.data);
 
+    // SCRIPT::testLine(nh);
+
     SCRIPT::firstLevel(nh);
     ROS_INFO("pass 1st Level!!");
+
+
 
     while(nh.ok()){
         orientation.data = -1;
@@ -132,11 +137,32 @@ void SCRIPT::firstLevel(ros::NodeHandle& nh){
             cout<<endl;
         }
         
-        if(MAP::disToOdom(nodeToGo) < decelerationZone)    orientation.data = -2;
+        // if(MAP::disToOdom(nodeToGo) < decelerationZone)    orientation.data = -2;
+
+        if(nodeNow != -1){
+            double ux = MAP::node[nodeToGo].second.first;
+            double uy = MAP::node[nodeToGo].second.second;
+            double vx = MAP::node[MAP::nodeNow].second.first;
+            double vy = MAP::node[MAP::nodeNow].second.second;
+            double x_diff = fabs(ux - vx);
+            double y_diff = fabs(uy - vy);
+            if(MAP::disToOdom(MAP::nodeNow) > (x_diff + y_diff - decelerationZone))
+                orientation.data = -2;
+        }else{
+            double ux = MAP::node[0].second.first;
+            double uy = MAP::node[0].second.second;
+            double vx = 60;
+            double vy = 180;
+            double x_diff = fabs(ux - vx);
+            double y_diff = fabs(uy - vy);
+            if(MAP::disToOdom(MAP::nodeNow) > (x_diff + y_diff - decelerationZone))
+                orientation.data = -2;
+        }
+        
+
         orientation_pub.publish(orientation);
 
         // ROS_INFO("On %d, -> %d",nodeNow,nodeToGo);
-        
         // ROS_INFO("go ahead: %d",orientation.data);
 
         rate.sleep();
@@ -147,6 +173,77 @@ void SCRIPT::dustBox(ros::NodeHandle& nh){
     while(nh.ok()){
         cmd_laji.data = 1;
         laji_pub.publish(cmd_laji);
+        rate.sleep();
+    }
+}
+void SCRIPT::testLine(ros::NodeHandle& nh){
+    ros::Rate rate(20);
+    int oriParam_last = -1;
+    
+    while(nh.ok()){
+        ros::spinOnce();
+        int oriParam = 0;
+
+
+        nh.getParam("/oriParam",oriParam);
+        ODOM::oriNow = orientation.data = oriParam;
+        if(oriParam != oriParam_last){
+            if(oriParam == 0){
+                nodeToGo = 7;
+                nodeNow = 4;
+            }else if(oriParam == 1){
+                nodeToGo = 4;
+                nodeNow = 5;
+            }else if(oriParam == 2){
+                nodeToGo = 4;
+                nodeNow = 7;
+            }else if(oriParam == 3){
+                nodeToGo = 5;
+                nodeNow = 4;
+            }
+            odometry.x = MAP::node[nodeNow].second.first;
+            odometry.y = MAP::node[nodeNow].second.second;
+        }
+
+        // if(MAP::disToOdom(nodeToGo) < decelerationZone){
+        //     orientation.data = -2;
+        //     ODOM::oriNow = -2;
+        // }
+
+        
+        // double ux = MAP::node[nodeToGo].second.first;
+        // double uy = MAP::node[nodeToGo].second.second;
+        // double vx = MAP::node[MAP::nodeNow].second.first;
+        // double vy = MAP::node[MAP::nodeNow].second.second;
+        // double x_diff = fabs(ux - vx);
+        // double y_diff = fabs(uy - vy);
+        // if(MAP::disToOdom(MAP::nodeNow) < (x_diff + y_diff - decelerationZone))
+        //     // ODOM::oriNow = orientation.data = -2;
+
+        if(nodeNow != -1){
+            double ux = MAP::node[nodeToGo].second.first;
+            double uy = MAP::node[nodeToGo].second.second;
+            double vx = MAP::node[MAP::nodeNow].second.first;
+            double vy = MAP::node[MAP::nodeNow].second.second;
+            double x_diff = fabs(ux - vx);
+            double y_diff = fabs(uy - vy);
+            if(MAP::disToOdom(MAP::nodeNow) > (x_diff + y_diff - decelerationZone))
+                ODOM::oriNow = orientation.data = -2;
+        }else{
+            double ux = MAP::node[0].second.first;
+            double uy = MAP::node[0].second.second;
+            double vx = 60;
+            double vy = 180;
+            double x_diff = fabs(ux - vx);
+            double y_diff = fabs(uy - vy);
+            if(MAP::disToOdom(MAP::nodeNow) > (x_diff + y_diff - decelerationZone))
+                ODOM::oriNow = orientation.data = -2;
+        }
+
+
+        orientation_pub.publish(orientation);
+
+        oriParam_last = oriParam;
         rate.sleep();
     }
 }

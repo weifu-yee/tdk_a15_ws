@@ -71,8 +71,14 @@ int MAP::cmd_ori(int u, int v){
     return -1;
 }
 int MAP::disToOdom(int u){
-    double ux = MAP::node[u].second.first;
-    double uy = MAP::node[u].second.second;
+    double ux, uy;
+    if(u == -1){
+        ux = 60;
+        uy = 180;        
+    }else{
+        ux = MAP::node[u].second.first;
+        uy = MAP::node[u].second.second;
+    }
     double x_diff = fabs(ux - ODOM::odometry.x);
     double y_diff = fabs(uy - ODOM::odometry.y);
     return (x_diff + y_diff);
@@ -80,11 +86,17 @@ int MAP::disToOdom(int u){
 bool MAP::check_onNode(int u){
     double ux = MAP::node[u].second.first;
     double uy = MAP::node[u].second.second;
-    double vx = MAP::node[MAP::nodeNow].second.first;
-    double vy = MAP::node[MAP::nodeNow].second.second;
+    double vx, vy;
+    if(MAP::nodeNow == -1){
+        vx = 60;
+        vy = 180;
+    }else{
+        vx = MAP::node[MAP::nodeNow].second.first;
+        vy = MAP::node[MAP::nodeNow].second.second;
+    }
     double x_diff = fabs(ux - vx);
     double y_diff = fabs(uy - vy);
-    if(disToOdom(MAP::nodeNow) < (x_diff + y_diff))    return false;
+    if(disToOdom(MAP::nodeNow) < (x_diff + y_diff - tolerence))    return false;
     
     return true;
 }
